@@ -6,3 +6,9 @@ torch
 keras
 tf-keras
 torch
+beautifulsoup4
+pdfplumber
+flask
+google-generativeai
+
+
