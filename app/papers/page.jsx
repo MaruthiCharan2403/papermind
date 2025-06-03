@@ -77,11 +77,7 @@ export default function PapersPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredPapers.map((paper) => (
-                <Link
-                  href={`/papers/${paper.id}`}
-                  key={paper.id}
-                  className="block hover:shadow-lg transition-shadow"
-                >
+                
                   <div className="bg-white rounded-lg shadow p-6 flex flex-col h-full cursor-pointer border border-gray-100 hover:border-blue-200">
                     <div className="flex items-center mb-4">
                       <FileText className="h-7 w-7 text-blue-600 mr-3" />
@@ -104,7 +100,7 @@ export default function PapersPage() {
                       </span>
                     </div>
                   </div>
-                </Link>
+            
               ))}
             </div>
           )}

@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Link from "next/link";
-import { Brain, User } from "lucide-react";
 import PapersList from "../components/paper-list";
 import ChatInterface from "../components/chat-interface";
 import Navbar from "../components/LoginNavbar";
@@ -13,13 +11,12 @@ function ChatPage() {
   const [selectedPaper, setSelectedPaper] = useState(null);
   const [chatHistory, setChatHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [paperView, setPaperView] = useState("my-papers"); // "my-papers" or "all-papers"
 
-  // Fetch user's papers on component mount
   useEffect(() => {
     fetchPapers();
-  }, []);
+  }, [paperView]);
 
-  // Fetch chat history when a paper is selected
   useEffect(() => {
     if (selectedPaper) {
       fetchChatHistory(selectedPaper.id);
@@ -27,8 +24,13 @@ function ChatPage() {
   }, [selectedPaper]);
 
   const fetchPapers = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get("http://localhost:5000/api/paper/my-papers", {
+      const endpoint =
+        paperView === "my-papers"
+          ? "http://localhost:5000/api/paper/my-papers"
+          : "http://localhost:5000/api/paper/all-papers";
+      const response = await axios.get(endpoint, {
         headers: {
           Authorization: `${sessionStorage.getItem("token")}`,
         },
@@ -43,11 +45,14 @@ function ChatPage() {
 
   const fetchChatHistory = async (paperId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/query/history/${paperId}`, {
-        headers: {
-          Authorization: `${sessionStorage.getItem("token")}`,
-        },
-      });
+      const response = await axios.get(
+        `http://localhost:5000/api/query/history/${paperId}`,
+        {
+          headers: {
+            Authorization: `${sessionStorage.getItem("token")}`,
+          },
+        }
+      );
       setChatHistory(response.data.queries || []);
     } catch (error) {
       console.error("Error fetching chat history:", error);
@@ -61,8 +66,8 @@ function ChatPage() {
 
   const handleNewMessage = (question, answer) => {
     const newQuery = {
-      id: Date.now(), // Temporary ID
-      user_id: 1,     // This should come from auth context
+      id: Date.now(),
+      user_id: 1, // Should come from auth context
       paper_id: selectedPaper.id,
       question,
       answer,
@@ -74,7 +79,7 @@ function ChatPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
-      <Navbar/>
+      <Navbar />
 
       {/* Main Chat Interface */}
       <div className="flex h-[calc(100vh-4rem)]">
@@ -85,6 +90,8 @@ function ChatPage() {
             selectedPaper={selectedPaper}
             onPaperSelect={handlePaperSelect}
             loading={loading}
+            paperView={paperView}
+            setPaperView={setPaperView}
           />
         </div>
 
