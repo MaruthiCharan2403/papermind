@@ -7,16 +7,14 @@ dotenv.config();
 
 const router = express.Router();
 router.post('/upload', auth, async (req, res) => {
-  const { title } = req.body;
-  console.log('Received title:', title);
+  const { name,title } = req.body;
+  console.log(name, title);
   if (!title) return res.status(400).json({ error: 'Missing PDF file or title' });
-  console.log('Processing title:', title);
   //check whether the title exists in the database
   const [existing] = await pool.execute(
     'SELECT * FROM research_papers WHERE title = ?',
     [title]
   );
-  console.log('Existing papers:', existing);
   if (existing.length>=1) return res.status(505).json({ error: 'Paper with this title already exists' });
   try {
     const flaskRes = await axios.post('http://127.0.0.1:5001/process-paper', {
@@ -24,8 +22,8 @@ router.post('/upload', auth, async (req, res) => {
     });
     const s3_faiss_key = flaskRes.data.s3_faiss_key;
     const [result] = await pool.execute(
-      'INSERT INTO research_papers (title, s3_faiss_key, uploaded_by) VALUES (?, ?, ?)',
-      [title, s3_faiss_key, req.user.userId]
+      'INSERT INTO research_papers (name,title, s3_faiss_key, uploaded_by) VALUES (?, ?, ?,?)',
+      [name,title, s3_faiss_key, req.user.userId]
     );
     res.status(201).json({ paperId: result.insertId, title, s3_faiss_key });
   } catch (err) {
@@ -68,6 +66,39 @@ router.get('/:paperId', auth, async (req, res) => {
     if (!rows.length)
       return res.status(404).json({ error: 'Paper not found' });
     res.json({ paper: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+//add an other user paper to the user research papers
+router.post('/add-paper', auth, async (req, res) => {
+  const { paperId } = req.body;
+  if (!paperId) return res.status(400).json({ error: 'Missing paper ID' });
+
+  try {
+    // Check if the paper exists
+    const [paperRows] = await pool.execute(
+      'SELECT * FROM research_papers WHERE id = ?',
+      [paperId]
+    );
+    if (!paperRows.length) return res.status(404).json({ error: 'Paper not found' });
+
+    // Check if the paper is already added by the user
+    const [existingRows] = await pool.execute(
+      'SELECT * FROM research_papers WHERE user_id = ? AND paper_id = ?',
+      [req.user.userId, paperId]
+    );
+    if (existingRows.length) return res.status(409).json({ error: 'Paper already added' });
+
+    // Add the paper to the user's collection
+    await pool.execute(
+      'INSERT into research_papers (name, title, s3_faiss_key, uploaded_by) VALUES (?, ?, ?, ?)',
+      [paperRows[0].name, paperRows[0].title, paperRows[0].s3_faiss_key, req.user.userId]
+    );
+
+    res.status(201).json({ message: 'Paper added successfully' });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }

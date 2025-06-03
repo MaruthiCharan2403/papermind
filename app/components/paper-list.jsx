@@ -66,7 +66,7 @@ function PapersList({ papers, selectedPaper, onPaperSelect, loading }) {
                     <FileText className="h-4 w-4 text-blue-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-gray-900 truncate mb-1">{paper.title}</h3>
+                    <h3 className="text-sm font-medium text-gray-900 truncate mb-1">{paper.name}</h3>
                     <div className="flex items-center text-xs text-gray-500">
                       <Calendar className="h-3 w-3 mr-1" />
                       {formatDate(paper.uploaded_at)}

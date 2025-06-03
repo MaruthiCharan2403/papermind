@@ -86,7 +86,7 @@ export default function PapersPage() {
                     <div className="flex items-center mb-4">
                       <FileText className="h-7 w-7 text-blue-600 mr-3" />
                       <span className="text-lg font-semibold text-gray-900 line-clamp-2">
-                        {paper.title}
+                        {paper.name}
                       </span>
                     </div>
                     <div className="flex-1" />

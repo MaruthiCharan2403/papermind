@@ -7,6 +7,7 @@ CREATE TABLE users (
 
 CREATE TABLE research_papers (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
     title VARCHAR(512) NOT NULL,
     s3_faiss_key VARCHAR(255) NOT NULL,
     uploaded_by INT,

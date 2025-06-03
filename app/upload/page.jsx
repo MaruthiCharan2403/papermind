@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 
 export default function UploadPage() {
+  const [name, setName] = useState("");
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState("idle"); // idle | loading | success | error
   const [message, setMessage] = useState("");
@@ -28,10 +29,10 @@ export default function UploadPage() {
 
     try {
       const token = sessionStorage.getItem("token");
-    console.log("Token:", token); // Debugging line to check token
+      console.log("Token:", token); // Debugging line to check token
       const res = await axios.post(
         "http://localhost:5000/api/paper/upload",
-        { title },
+        { name, title },
         { headers: { Authorization: `${token}` } }
       );
 
@@ -75,13 +76,36 @@ export default function UploadPage() {
             Upload Research Paper
           </h2>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">
-                Title or DOI
+            <div className="relative z-0 w-full mb-6 group">
+              <input
+                type="text"
+                name="name"
+                id="name"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setStatus("idle");
+                  setMessage("");
+                  setPaperId(null);
+                }}
+                required
+                className="block py-2.5 px-0 w-full text-sm text-black bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                placeholder=" "
+                disabled={status === "loading"}
+              />
+              <label
+                htmlFor="name"
+                className="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-1.5 peer-focus:scale-75 peer-focus:-translate-y-6"
+              >
+                Name of the Paper
               </label>
+            </div>
+
+            <div className="relative z-0 w-full mb-6 group">
               <input
                 type="text"
                 name="title"
+                id="title"
                 value={title}
                 onChange={(e) => {
                   setTitle(e.target.value);
@@ -90,12 +114,18 @@ export default function UploadPage() {
                   setPaperId(null);
                 }}
                 required
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder:text-gray-400"
-                placeholder="Enter the title or DOI of the paper"
+                className="block py-2.5 px-0 w-full text-sm text-black bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                placeholder=" "
                 disabled={status === "loading"}
-                style={{ color: "#000" }}
               />
+              <label
+                htmlFor="title"
+                className="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-1.5 peer-focus:scale-75 peer-focus:-translate-y-6"
+              >
+                DOI
+              </label>
             </div>
+
             <button
               type="submit"
               className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center transition-colors"

@@ -84,7 +84,7 @@ function ChatInterface({ selectedPaper, chatHistory, onNewMessage }) {
             <FileText className="h-5 w-5 text-blue-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 truncate">{selectedPaper.title}</h2>
+            <h2 className="text-lg font-semibold text-gray-900 truncate">{selectedPaper.name}</h2>
             <p className="text-sm text-gray-500">Ask questions about this paper</p>
           </div>
         </div>
