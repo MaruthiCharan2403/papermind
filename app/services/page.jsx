@@ -13,10 +13,12 @@ import {
 } from "lucide-react"
 import Navbar from "../components/Navbar"
 import Footer from "../components/Footer"
+import { useRouter } from "next/navigation"
 
 
 
 export default function ServicesPage() {
+  const router = useRouter();
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
@@ -258,7 +260,7 @@ export default function ServicesPage() {
             Start understanding research papers like never before. Try PaperMind for free
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-white hover:bg-gray-100 text-blue-600 px-8 py-3 rounded-lg text-lg font-medium transition-colors flex items-center justify-center">
+            <button className="bg-white hover:bg-gray-100 text-blue-600 px-8 py-3 rounded-lg text-lg font-medium transition-colors flex items-center justify-center" onClick={() => router.push('/login')}>
               Get Started
               <ArrowRight className="ml-2 h-5 w-5" />
             </button>
