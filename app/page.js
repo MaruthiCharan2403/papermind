@@ -1,11 +1,15 @@
+"use client"
 import Link from "next/link"
+
 import { ArrowRight, Upload, MessageCircle, Brain, CheckCircle, Users, Clock, Target } from "lucide-react"
 import Navbar from "./components/Navbar"
 import Footer from "./components/Footer"
+import { useRouter } from "next/navigation"
 
 
 
 export default function HomePage() {
+  const router = useRouter()
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
@@ -24,7 +28,7 @@ export default function HomePage() {
               English. Our AI will provide clear, accurate answers based on the content.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-medium transition-colors flex items-center justify-center">
+              <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-medium transition-colors flex items-center justify-center" onClick={() => router.push('/login')}>
                 Try It Free
                 <ArrowRight className="ml-2 h-5 w-5" />
               </button>
