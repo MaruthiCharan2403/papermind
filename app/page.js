@@ -3,6 +3,8 @@ import { ArrowRight, Upload, MessageCircle, Brain, CheckCircle, Users, Clock, Ta
 import Navbar from "./components/Navbar"
 import Footer from "./components/Footer"
 
+
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">

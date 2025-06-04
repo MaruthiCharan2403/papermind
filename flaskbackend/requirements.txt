@@ -2,13 +2,10 @@ langchain
 langchain-community
 sentence-transformers
 transformers
-torch
+torch==2.7.0 --index-url https://download.pytorch.org/whl/cpu
 keras
 tf-keras
-torch
 beautifulsoup4
 pdfplumber
 flask
 google-generativeai
-
-
