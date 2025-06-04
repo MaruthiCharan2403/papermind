@@ -1,0 +1,36 @@
+# Ignore Python virtual environment
+venv/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# Environment variables or config files
+.env
+*.env
+
+# IDE/editor folders
+.vscode/
+.idea/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Log files
+*.log
+
+
+# Cache
+*.cache
+*.pytest_cache

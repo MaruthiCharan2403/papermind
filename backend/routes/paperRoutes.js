@@ -17,7 +17,7 @@ router.post('/upload', auth, async (req, res) => {
   );
   if (existing.length>=1) return res.status(505).json({ error: 'Paper with this title already exists' });
   try {
-    const flaskRes = await axios.post('http://127.0.0.1:5001/process-paper', {
+    const flaskRes = await axios.post('http://3.90.43.39:5001/process-paper', {
     title
     });
     const s3_faiss_key = flaskRes.data.s3_faiss_key;

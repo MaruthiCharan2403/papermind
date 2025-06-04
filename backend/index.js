@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 pool.getConnection()
-  .then(() => console.log('Connected to MySQL database'))
+  .then(() => console.log('Connected to MySQL database.The data'))
   .catch(err => console.error('Database connection error:', err));
 app.use('/api/user', userRoutes);
 app.use('/api/paper', paperRoutes);

@@ -1,30 +1,20 @@
-# Use an official Python base image
 FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
-    git \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements file
 COPY requirements.txt .
+RUN python -m pip install --upgrade --no-cache-dir pip && \
+    pip install --no-cache-dir torch==2.7.0 --index-url https://download.pytorch.org/whl/cpu
 
-# Install Python dependencies
-RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
 
-
-# Install remaining dependencies
-RUN pip install -r requirements.txt
-
-# Copy application code
 COPY . .
 
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# Command to run the Flask app
-CMD ["python", "main.py"]
+CMD ["python", "app.py"]
