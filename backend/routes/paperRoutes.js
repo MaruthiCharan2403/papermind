@@ -1,7 +1,7 @@
 import express from 'express';
 import pool from '../db.js';
 import axios from 'axios';
-import auth from '../middleware/auth.js'; // Middleware to check authentication
+import auth from '../middleware/auth.js'; 
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -17,7 +17,7 @@ router.post('/upload', auth, async (req, res) => {
   );
   if (existing.length>=1) return res.status(505).json({ error: 'Paper with this title already exists' });
   try {
-    const flaskRes = await axios.post('http://3.90.43.39:5001/process-paper', {
+    const flaskRes = await axios.post(process.env.FLASK_URL+'/process-paper', {
     title
     });
     const s3_faiss_key = flaskRes.data.s3_faiss_key;
@@ -105,7 +105,6 @@ router.post('/add-paper', auth, async (req, res) => {
 });
 
 
-//get all papers with the username of the uploader
 
 
 export default router;

@@ -1,7 +1,7 @@
 import express from 'express';
 import pool from '../db.js';
 import axios from 'axios';
-import auth from '../middleware/auth.js'; // Middleware to check authentication
+import auth from '../middleware/auth.js'; 
 const router = express.Router();
 
 router.post('/ask', auth, async (req, res) => {
