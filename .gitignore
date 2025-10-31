@@ -42,3 +42,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Vector databases
+flaskbackend/faiss_indices/
+flaskbackend/chroma_db/
+flaskbackend/__pycache__/

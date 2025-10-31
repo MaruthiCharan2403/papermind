@@ -30,6 +30,11 @@ Thumbs.db
 # Log files
 *.log
 
+# Old FAISS indices
+faiss_indices/
+
+# Chroma database (can be excluded if you want fresh DB in container)
+# chroma_db/
 
 # Cache
 *.cache

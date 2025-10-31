@@ -31,7 +31,7 @@ export default function UploadPage() {
       const token = sessionStorage.getItem("token");
       console.log("Token:", token); // Debugging line to check token
       const res = await axios.post(
-        "https://papermindbackend.vercel.app/api/paper/upload",
+        "http://localhost:5000/api/paper/upload",
         { name, title },
         { headers: { Authorization: `${token}` } }
       );

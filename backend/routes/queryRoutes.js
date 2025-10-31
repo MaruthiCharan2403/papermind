@@ -16,11 +16,13 @@ router.post('/ask', auth, async (req, res) => {
     if (!papers.length)
       return res.status(404).json({ error: 'Paper not found' });
 
-    const s3_faiss_key = papers[0].s3_faiss_key;
-    const flaskRes = await axios.post(process.env.FLASK_URL + '/ask', {
-      s3_faiss_key,
+    // Send paper_id instead of s3_faiss_key to Flask
+    console.log('Sending to Flask:', { paper_id: paperId, question });
+    const flaskRes = await axios.post('http://127.0.0.1:5001/ask', {
+      paper_id: paperId,
       question
     });
+    console.log('Flask response:', flaskRes.data);
     const answer = flaskRes.data.answer;
     await pool.execute(
       'INSERT INTO user_queries (user_id, paper_id, question, answer) VALUES (?, ?, ?, ?)',
@@ -28,7 +30,12 @@ router.post('/ask', auth, async (req, res) => {
     );
     res.status(200).json({ answer });
   } catch (err) {
-    res.status(500).json({ error: 'Query failed' });
+    console.error('Query error:', err.message);
+    if (err.response) {
+      console.error('Flask error response:', err.response.data);
+      return res.status(500).json({ error: err.response.data.error || 'Query failed' });
+    }
+    res.status(500).json({ error: 'Query failed: ' + err.message });
   }
 });
 

@@ -25,7 +25,7 @@ export default function RegisterPage() {
     setSuccess("");
 
     try {
-      const res = await axios.post("https://papermindbackend.vercel.app/api/user/register", form);
+      const res = await axios.post("http://localhost:5000/api/user/register", form);
 
       if (res.status === 201) {
         setSuccess("Registration successful! Redirecting...");

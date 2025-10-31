@@ -17,4 +17,7 @@ COPY . .
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# ChromaDB will store data in ./chroma_db
+# Mount a volume to persist data: -v $(pwd)/chroma_db:/app/chroma_db
+
 CMD ["python", "app.py"]

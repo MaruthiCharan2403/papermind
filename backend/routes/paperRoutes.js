@@ -17,16 +17,27 @@ router.post('/upload', auth, async (req, res) => {
   );
   if (existing.length>=1) return res.status(505).json({ error: 'Paper with this title already exists' });
   try {
-    const flaskRes = await axios.post(process.env.FLASK_URL+'/process-paper', {
-    title
-    });
-    const s3_faiss_key = flaskRes.data.s3_faiss_key;
+    // First, create the paper record to get the paper_id
     const [result] = await pool.execute(
-      'INSERT INTO research_papers (name,title, s3_faiss_key, uploaded_by) VALUES (?, ?, ?,?)',
-      [name,title, s3_faiss_key, req.user.userId]
+      'INSERT INTO research_papers (name, title, s3_faiss_key, uploaded_by) VALUES (?, ?, ?, ?)',
+      [name, title, 'chroma_collection', req.user.userId]
     );
-    res.status(201).json({ paperId: result.insertId, title, s3_faiss_key });
+    
+    const paperId = result.insertId;
+    
+    // Send to Flask with paper_id
+    const flaskRes = await axios.post('http://127.0.0.1:5001/process-paper', {
+      title,
+      paper_id: paperId
+    });
+    
+    res.status(201).json({ 
+      paperId: paperId, 
+      title, 
+      message: flaskRes.data.message 
+    });
   } catch (err) {
+    console.error('Paper processing error:', err);
     res.status(500).json({ error: 'Paper processing failed' });
   }
 });
@@ -87,24 +98,67 @@ router.post('/add-paper', auth, async (req, res) => {
 
     // Check if the paper is already added by the user
     const [existingRows] = await pool.execute(
-      'SELECT * FROM research_papers WHERE user_id = ? AND paper_id = ?',
-      [req.user.userId, paperId]
+      'SELECT * FROM research_papers WHERE uploaded_by = ? AND title = ?',
+      [req.user.userId, paperRows[0].title]
     );
     if (existingRows.length) return res.status(409).json({ error: 'Paper already added' });
 
-    // Add the paper to the user's collection
+    // Add the paper to the user's collection (referencing same Chroma data via paper ID)
     await pool.execute(
       'INSERT into research_papers (name, title, s3_faiss_key, uploaded_by) VALUES (?, ?, ?, ?)',
-      [paperRows[0].name, paperRows[0].title, paperRows[0].s3_faiss_key, req.user.userId]
+      [paperRows[0].name, paperRows[0].title, 'chroma_collection', req.user.userId]
     );
 
     res.status(201).json({ message: 'Paper added successfully' });
   } catch (err) {
+    console.error('Add paper error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
 
+// Delete a paper
+router.delete('/:paperId', auth, async (req, res) => {
+  const { paperId } = req.params;
+  
+  try {
+    // Check if paper exists and belongs to user
+    const [papers] = await pool.execute(
+      'SELECT * FROM research_papers WHERE id = ? AND uploaded_by = ?',
+      [paperId, req.user.userId]
+    );
+    
+    if (!papers.length) {
+      return res.status(404).json({ error: 'Paper not found or unauthorized' });
+    }
+    
+    // Delete from Chroma collection
+    try {
+      await axios.post('http://127.0.0.1:5001/delete-paper', {
+        paper_id: paperId
+      });
+    } catch (flaskErr) {
+      console.error('Flask delete error:', flaskErr);
+      // Continue with database deletion even if Flask fails
+    }
+    
+    // Delete from database (queries will be cascade deleted if FK is set up properly)
+    await pool.execute(
+      'DELETE FROM user_queries WHERE paper_id = ?',
+      [paperId]
+    );
+    
+    await pool.execute(
+      'DELETE FROM research_papers WHERE id = ?',
+      [paperId]
+    );
+    
+    res.status(200).json({ message: 'Paper deleted successfully' });
+  } catch (err) {
+    console.error('Delete error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 
 export default router;
