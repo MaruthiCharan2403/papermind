@@ -8,20 +8,46 @@ from urllib.parse import urljoin
 import time
 import random
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
+from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import SentenceTransformerEmbeddings
 import re
 from gemini_utils import call_gemini_api
-import chromadb
-from chromadb.config import Settings
+import pickle
+import shutil
 
 app = Flask(__name__)
 
 embedding_model = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
 
-# Initialize Chroma client with persistent storage
-CHROMA_PERSIST_DIR = "./chroma_db"
-chroma_client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
+# Initialize FAISS storage directory
+FAISS_STORE_DIR = "./faiss_db"
+os.makedirs(FAISS_STORE_DIR, exist_ok=True)
+
+# Store paper metadata separately
+METADATA_FILE = os.path.join(FAISS_STORE_DIR, "paper_metadata.pkl")
+
+def load_metadata():
+    """Load paper metadata from disk"""
+    if os.path.exists(METADATA_FILE):
+        with open(METADATA_FILE, 'rb') as f:
+            return pickle.load(f)
+    return {}
+
+def save_metadata(metadata):
+    """Save paper metadata to disk"""
+    with open(METADATA_FILE, 'wb') as f:
+        pickle.dump(metadata, f)
+
+def get_paper_index_path(paper_id):
+    """Get the FAISS index path for a specific paper"""
+    return os.path.join(FAISS_STORE_DIR, f"paper_{paper_id}")
+
+def load_vectorstore(paper_id):
+    """Load FAISS vectorstore for a specific paper"""
+    index_path = get_paper_index_path(paper_id)
+    if os.path.exists(index_path):
+        return FAISS.load_local(index_path, embedding_model, allow_dangerous_deserialization=True)
+    return None
 
 SCI_HUB_DOMAINS = [
     "https://tesble.com",
@@ -131,21 +157,27 @@ def process_paper_route():
         for i in range(len(texts))
     ]
     
-    # Use a single collection for all papers
-    vectorstore = Chroma(
-        collection_name="papers_collection",
-        embedding_function=embedding_model,
-        persist_directory=CHROMA_PERSIST_DIR,
-        client=chroma_client
-    )
+    # Create FAISS vectorstore for this paper
+    vectorstore = FAISS.from_texts(texts=texts, embedding=embedding_model, metadatas=metadatas)
     
-    # Add documents to the collection
-    vectorstore.add_texts(texts=texts, metadatas=metadatas)
-    print(f"Added {len(texts)} chunks to Chroma collection for paper_id: {paper_id}")
+    # Save the vectorstore to disk
+    index_path = get_paper_index_path(paper_id)
+    vectorstore.save_local(index_path)
+    
+    # Update metadata
+    all_metadata = load_metadata()
+    all_metadata[str(paper_id)] = {
+        "title": title,
+        "num_chunks": len(texts),
+        "index_path": index_path
+    }
+    save_metadata(all_metadata)
+    
+    print(f"Added {len(texts)} chunks to FAISS index for paper_id: {paper_id}")
     
     return jsonify({
         "paper_id": paper_id,
-        "message": f"Paper successfully added to Chroma collection with {len(texts)} chunks."
+        "message": f"Paper successfully indexed with FAISS with {len(texts)} chunks."
     }), 200
 
 @app.route('/ask', methods=['POST'])
@@ -160,15 +192,13 @@ def ask_route():
         if not paper_id:
             return jsonify({"error": "paper_id is required"}), 400
         
-        # Load the Chroma collection
-        vectorstore = Chroma(
-            collection_name="papers_collection",
-            embedding_function=embedding_model,
-            persist_directory=CHROMA_PERSIST_DIR,
-            client=chroma_client
-        )
+        # Load the FAISS vectorstore for this paper
+        vectorstore = load_vectorstore(paper_id)
         
-        print(f"Loaded Chroma collection for paper_id: {paper_id}")
+        if vectorstore is None:
+            return jsonify({"error": f"No FAISS index found for paper_id: {paper_id}"}), 404
+        
+        print(f"Loaded FAISS index for paper_id: {paper_id}")
         
         question_lower = question.lower()
         needs_early_chunks = any(keyword in question_lower for keyword in 
@@ -181,42 +211,23 @@ def ask_route():
 
         print(f"Retrieving top {k} chunks (needs_early_chunks: {needs_early_chunks})")
         
-        retriever = vectorstore.as_retriever(
-            search_type="similarity",
-            search_kwargs={
-                "k": k,
-                "filter": {"paper_id": str(paper_id)}
-            }
-        )
-        
-        # Use invoke instead of deprecated get_relevant_documents
-        docs = retriever.invoke(question)
+        # Perform similarity search with FAISS
+        docs = vectorstore.similarity_search(question, k=k)
         
         # For abstract/intro questions, also get the first few chunks
         if needs_early_chunks and docs:
-            collection = vectorstore._collection
-            # Get all chunks for this paper and filter manually
-            # ChromaDB doesn't support multiple conditions in where clause easily
-            all_paper_chunks = collection.get(
-                where={"paper_id": str(paper_id)},
-                limit=100  # Get enough to find early chunks
-            )
+            from langchain.schema import Document
+            current_chunk_texts = set([d.page_content for d in docs])
             
-            if all_paper_chunks and all_paper_chunks['documents']:
-                from langchain.schema import Document
-                current_chunk_texts = set([d.page_content for d in docs])
-                
-                # Find and add first 3 chunks if not already present
-                for i, metadata in enumerate(all_paper_chunks['metadatas']):
-                    if metadata and metadata.get('chunk_index', 999) <= 2:
-                        doc_text = all_paper_chunks['documents'][i]
-                        if doc_text not in current_chunk_texts:
-                            early_doc = Document(
-                                page_content=doc_text,
-                                metadata=metadata
-                            )
-                            docs.insert(0, early_doc)
-                            print(f"Added early chunk {metadata.get('chunk_index')} to results")
+            # Get all documents from the vectorstore
+            all_docs = vectorstore.docstore._dict
+            
+            # Find and add first 3 chunks if not already present
+            for doc_id, doc in all_docs.items():
+                if doc.metadata and doc.metadata.get('chunk_index', 999) <= 2:
+                    if doc.page_content not in current_chunk_texts:
+                        docs.insert(0, doc)
+                        print(f"Added early chunk {doc.metadata.get('chunk_index')} to results")
         
         if not docs:
             return jsonify({"error": "No relevant documents found for this paper."}), 404
@@ -270,54 +281,44 @@ def delete_paper_route():
         return jsonify({"error": "paper_id is required"}), 400
     
     try:
-        # Load the Chroma collection
-        vectorstore = Chroma(
-            collection_name="papers_collection",
-            embedding_function=embedding_model,
-            persist_directory=CHROMA_PERSIST_DIR,
-            client=chroma_client
-        )
+        # Delete the FAISS index files for this paper
+        index_path = get_paper_index_path(paper_id)
         
-        # Delete documents with the specific paper_id
-        collection = vectorstore._collection
-        collection.delete(where={"paper_id": str(paper_id)})
+        if os.path.exists(index_path):
+            shutil.rmtree(index_path)
+            print(f"Deleted FAISS index directory for paper_id: {paper_id}")
         
-        print(f"Deleted all chunks for paper_id: {paper_id}")
-        return jsonify({"message": f"Paper {paper_id} successfully deleted from collection."}), 200
+        # Update metadata
+        all_metadata = load_metadata()
+        if str(paper_id) in all_metadata:
+            del all_metadata[str(paper_id)]
+            save_metadata(all_metadata)
+        
+        print(f"Deleted all data for paper_id: {paper_id}")
+        return jsonify({"message": f"Paper {paper_id} successfully deleted."}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route('/debug/collection-info', methods=['GET'])
 def collection_info():
-    """Debug endpoint to check what's in the ChromaDB collection"""
+    """Debug endpoint to check what's in the FAISS storage"""
     try:
-        vectorstore = Chroma(
-            collection_name="papers_collection",
-            embedding_function=embedding_model,
-            persist_directory=CHROMA_PERSIST_DIR,
-            client=chroma_client
-        )
+        all_metadata = load_metadata()
         
-        collection = vectorstore._collection
-        count = collection.count()
-        
-        # Get sample documents
-        if count > 0:
-            results = collection.get(limit=5)
-            paper_ids = set()
-            for metadata in results['metadatas']:
-                if metadata and 'paper_id' in metadata:
-                    paper_ids.add(metadata['paper_id'])
+        if all_metadata:
+            total_chunks = sum(info.get('num_chunks', 0) for info in all_metadata.values())
             
             return jsonify({
-                "total_chunks": count,
-                "paper_ids_found": list(paper_ids),
-                "sample_metadata": results['metadatas'][:3]
+                "total_chunks": total_chunks,
+                "total_papers": len(all_metadata),
+                "paper_ids_found": list(all_metadata.keys()),
+                "papers_info": all_metadata
             }), 200
         else:
             return jsonify({
                 "total_chunks": 0,
-                "message": "No papers in collection yet. Upload a paper first."
+                "total_papers": 0,
+                "message": "No papers indexed yet. Upload a paper first."
             }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

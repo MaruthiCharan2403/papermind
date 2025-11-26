@@ -5,6 +5,7 @@
 backend/node_modules
 flaskbackend/venv
 backend/flaskbackend/venv
+flaskbackend/faiss_db
 /.pnp
 .pnp.*
 .yarn/*

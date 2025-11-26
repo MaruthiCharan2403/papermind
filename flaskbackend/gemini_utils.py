@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configure with API key from environment or hardcoded fallback
-api_key = os.getenv("GOOGLE_API_KEY", "AIzaSyCDlA3YmXewtjn2PQDGPoETqnvCc0JFqvw")
+api_key = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=api_key)
 
 def call_gemini_api(prompt):

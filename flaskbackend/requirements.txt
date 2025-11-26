@@ -9,5 +9,5 @@ beautifulsoup4
 pdfplumber
 flask
 google-generativeai
-chromadb
+faiss-cpu
 python-dotenv
