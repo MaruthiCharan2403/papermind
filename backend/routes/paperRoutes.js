@@ -26,7 +26,7 @@ router.post('/upload', auth, async (req, res) => {
     const paperId = result.insertId;
     
     // Send to Flask with paper_id
-    const flaskRes = await axios.post('http://127.0.0.1:5001/process-paper', {
+    const flaskRes = await axios.post('http://13.220.57.143:5001/process-paper', {
       title,
       paper_id: paperId
     });
@@ -134,7 +134,7 @@ router.delete('/:paperId', auth, async (req, res) => {
     
     // Delete from Chroma collection
     try {
-      await axios.post('http://127.0.0.1:5001/delete-paper', {
+      await axios.post('http://13.220.57.143:5001/delete-paper', {
         paper_id: paperId
       });
     } catch (flaskErr) {

@@ -18,7 +18,7 @@ router.post('/ask', auth, async (req, res) => {
 
     // Send paper_id instead of s3_faiss_key to Flask
     console.log('Sending to Flask:', { paper_id: paperId, question });
-    const flaskRes = await axios.post('http://127.0.0.1:5001/ask', {
+    const flaskRes = await axios.post('http://13.220.57.143:5001/ask', {
       paper_id: paperId,
       question
     });
