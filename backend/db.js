@@ -7,10 +7,8 @@ const pool = mysql.createPool({
   password: process.env.DB_PASS || '',
   database: process.env.DB_NAME || 'research_chatbot',
   waitForConnections: true,
-  connectionLimit: 2,
-  queueLimit: 0,
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 0
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
 export default pool;
