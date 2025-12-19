@@ -8,7 +8,11 @@ import userRoutes from './routes/userRoutes.js';
 import paperRoutes from './routes/paperRoutes.js';
 import queryRoutes from './routes/queryRoutes.js';
 import pool from './db.js'; 
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+}));
+
 
 app.use(express.json());
 
