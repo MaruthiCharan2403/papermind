@@ -20,5 +20,5 @@ app.use('/api/paper', paperRoutes);
 app.use('/api/query', queryRoutes);
 
 app.listen(5000, () => {
-  console.log('Express server running on https://papermind.vercel.app');
+  console.log('Express server running on https://papermindbackend.vercel.app');
 });

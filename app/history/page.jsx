@@ -28,8 +28,8 @@ function ChatPage() {
     try {
       const endpoint =
         paperView === "my-papers"
-          ? "https://papermind.vercel.app/api/paper/my-papers"
-          : "https://papermind.vercel.app/api/paper/all-papers";
+          ? "https://papermindbackend.vercel.app/api/paper/my-papers"
+          : "https://papermindbackend.vercel.app/api/paper/all-papers";
       const response = await axios.get(endpoint, {
         headers: {
           Authorization: `${sessionStorage.getItem("token")}`,
@@ -46,7 +46,7 @@ function ChatPage() {
   const fetchChatHistory = async (paperId) => {
     try {
       const response = await axios.get(
-        `https://papermind.vercel.app/api/query/history/${paperId}`,
+        `https://papermindbackend.vercel.app/api/query/history/${paperId}`,
         {
           headers: {
             Authorization: `${sessionStorage.getItem("token")}`,

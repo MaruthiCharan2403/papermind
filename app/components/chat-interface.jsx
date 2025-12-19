@@ -27,7 +27,7 @@ function ChatInterface({ selectedPaper, chatHistory, onNewMessage }) {
 
     try {
       const response = await axios.post(
-        "https://papermind.vercel.app/api/query/ask",
+        "https://papermindbackend.vercel.app/api/query/ask",
         {
           paperId: selectedPaper.id,
           question,
