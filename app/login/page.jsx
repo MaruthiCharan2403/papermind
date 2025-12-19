@@ -27,7 +27,7 @@ export default function LoginPage() {
     setSuccess("");
 
     try {
-      const res = await axios.post("http://localhost:5000/api/user/login", form);
+      const res = await axios.post("https://papermind.vercel.app/api/user/login", form);
       if (res.status === 200) {
         setSuccess("Login successful! Redirecting...");
         sessionStorage.setItem("token", res.data.token);

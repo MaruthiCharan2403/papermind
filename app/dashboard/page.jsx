@@ -21,7 +21,7 @@ export default function PapersPage() {
       setError("");
       try {
         const token = sessionStorage.getItem("token");
-        const res = await axios.get("http://localhost:5000/api/paper/my-papers", {
+        const res = await axios.get("https://papermind.vercel.app/api/paper/my-papers", {
           headers: { Authorization: `${token}` },
         });
         setPapers(res.data.papers);
